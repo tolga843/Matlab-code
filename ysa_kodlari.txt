@@ -1,0 +1,442 @@
+%******************************************
+% Eðitim **********************************
+%******************************************
+
+egit1 = importdata('e1.txt');
+egit2 = importdata('e2.txt');
+egit3 = importdata('e3.txt');
+
+test1 = importdata('t1.txt');
+test2 = importdata('t2.txt');
+test3 = importdata('t3.txt');
+
+ne = [96 96 96];
+nt = [48 48 48];
+
+for k=1:3
+  ep=50;
+  oran=[0.125 0.069 0.382 0.424];
+  switch k
+    case 1, 
+      xe=egit1(:,1:38)';
+      yed=egit1(:,39)';
+      xt=test1(:,1:38)';
+      ytd=test1(:,39)';
+    case 2,
+      xe=egit2(:,1:38)';
+      yed=egit2(:,39)';
+      xt=test2(:,1:38)';
+      ytd=test2(:,39)';
+    otherwise,
+      xe=egit3(:,1:38)';
+      yed=egit3(:,39)';
+      xt=test3(:,1:38)';
+      ytd=test3(:,39)';    
+  end
+   
+  t=ind2vec(yed); 
+
+  %******************************************
+  % pnn aðý *********************************
+  %******************************************
+
+  pnn=newpnn(xe,t,6.0); 
+  ye1=sim(pnn,xe);
+  ye=vec2ind(ye1);
+  n=0;
+  for i=1:ne(k)
+    if yed(i)==ye(i) 
+      n=n+1;
+    end
+  end
+  
+  dogruluk_eg(k) = 100*(n/ne(k))
+
+  yt1=sim(pnn,xt);
+  yt=vec2ind(yt1);
+  n=0;
+  for i=1:nt(k)
+    if ytd(i)==yt(i) 
+      n=n+1;
+    end
+  end
+  dogruluk_ts(k)=100*(n/nt(k))
+
+  %******************************************
+  % lvq aðý *********************************
+  %******************************************
+
+  lvq = newlvq(minmax(xe),60,oran,0.1);
+  lvq.trainParam.epochs=300;
+  lvq.trainParam.show=5;
+  lvq.trainParam.goal=0.07;
+  lvq=train(lvq,xe,t);
+
+  yel1=sim(lvq,xe);
+  yel=vec2ind(yel1);
+  n=0;
+  for i=1:ne(k)
+    if yed(i)==yel(i) 
+      n=n+1;
+    end
+  end
+  dogruluk_egl(k) = 100*(n/ne(k))
+
+  ytl1=sim(lvq,xt);
+  ytl=vec2ind(ytl1);
+  n=0;
+  for i=1:nt(k)
+    if ytd(i)==ytl(i) 
+      n=n+1;
+    end
+  end
+  dogruluk_tsl(k)=100*(n/nt(k))
+
+  %******************************************
+  % mlnn aðý ********************************
+  %******************************************
+
+  % mlnn1 aðý
+
+  mlnn1 = newff(minmax(xe),[40 1],{'tansig' 'tansig'},'traingdx');
+  mlnn1.trainParam.epochs=300;
+  mlnn1.trainParam.show=10;
+  mlnn1.trainParam.min_grad=0;
+  mlnn1.trainParam.goal=1e-6;
+  yedm=yed/4;
+  mlnn1=train(mlnn1,xe,yedm);
+  yem1=sim(mlnn1,xe);
+  yem1=round(yem1*4);
+  n=0;
+  for i=1:ne(k)
+    if yed(i)==yem1(i) 
+      n=n+1;
+    end
+  end
+  dogruluk_egm1(k) = 100*(n/ne(k))
+
+  ytm1=sim(mlnn1,xt);
+  ytm1=round(ytm1*4);
+  n=0;
+  for i=1:nt(k)
+    if ytd(i)==ytm1(i) 
+      n=n+1;
+    end
+  end
+  dogruluk_tsm1(k)=100*(n/nt(k))
+
+  % mlnn2 aðý
+
+  mlnn2 = newff(minmax(xe),[50 50 1],{'tansig' 'tansig' 'tansig'},'traingdx');
+  mlnn2.trainParam.epochs=200;
+  mlnn2.trainParam.show=5;
+  mlnn2.trainParam.min_grad=0;
+  mlnn2.trainParam.goal=5e-6;
+  yedm=yed/4;
+  mlnn2=train(mlnn2,xe,yedm);
+  yem2=sim(mlnn2,xe);
+  yem2=round(yem2*4);
+  n=0;
+  for i=1:ne(k)
+   if yed(i)==yem2(i) 
+     n=n+1;
+   end
+  end
+  dogruluk_egm2(k) = 100*(n/ne(k))
+
+  ytm2=sim(mlnn2,xt);
+  ytm2=round(ytm2*4);
+  n=0;
+  for i=1:nt(k)
+    if ytd(i)==ytm2(i) 
+      n=n+1;
+    end
+   end
+   
+  dogruluk_tsm2(k)=100*(n/nt(k))
+
+
+end
+
+dogruluk_ep = mean(dogruluk_eg)
+dogruluk_el = mean(dogruluk_egl)
+dogruluk_em1 = mean(dogruluk_egm1)
+dogruluk_em2 = mean(dogruluk_egm2)
+
+dogruluk_tp = mean(dogruluk_ts)
+dogruluk_tl = mean(dogruluk_tsl)
+dogruluk_tm1 = mean(dogruluk_tsm1)
+dogruluk_tm2 = mean(dogruluk_tsm2)
+
+**********************************************************
+******** Sadece Pnn **************************************
+**********************************************************
+
+egit1 = importdata('e1.txt');
+egit2 = importdata('e2.txt');
+egit3 = importdata('e3.txt');
+
+test1 = importdata('t1.txt');
+test2 = importdata('t2.txt');
+test3 = importdata('t3.txt');
+
+ne = [96 96 96];
+nt = [48 48 48];
+
+for k=1:3
+  switch k
+    case 1, 
+      xe=egit1(:,1:38)';
+      yed=egit1(:,39)';
+      xt=test1(:,1:38)';
+      ytd=test1(:,39)';
+    case 2,
+      xe=egit2(:,1:38)';
+      yed=egit2(:,39)';
+      xt=test2(:,1:38)';
+      ytd=test2(:,39)';
+    otherwise,
+      xe=egit3(:,1:38)';
+      yed=egit3(:,39)';
+      xt=test3(:,1:38)';
+      ytd=test3(:,39)';    
+  end
+   
+  t=ind2vec(yed); 
+
+  pnn=newpnn(xe,t,6.0); 
+  ye1=sim(pnn,xe);
+  ye=vec2ind(ye1);
+  n=0;
+  for i=1:ne(k)
+    if yed(i)==ye(i) 
+      n=n+1;
+    end
+  end
+  
+  dogruluk_eg(k) = 100*(n/ne(k))
+
+  yt1=sim(pnn,xt);
+  yt=vec2ind(yt1);
+  n=0;
+  for i=1:nt(k)
+    if ytd(i)==yt(i) 
+      n=n+1;
+    end
+  end
+  dogruluk_ts(k)=100*(n/nt(k))
+
+end
+
+dogruluk_ep = mean(dogruluk_eg)
+dogruluk_tp = mean(dogruluk_ts)
+
+
+**********************************************************
+******** Sadece lvq **************************************
+**********************************************************
+
+egit1 = importdata('e1.txt');
+egit2 = importdata('e2.txt');
+egit3 = importdata('e3.txt');
+
+test1 = importdata('t1.txt');
+test2 = importdata('t2.txt');
+test3 = importdata('t3.txt');
+
+ne = [96 96 96];
+nt = [48 48 48];
+
+for k=1:3
+  ep=50;
+  oran=[0.125 0.069 0.382 0.424];
+  switch k
+    case 1, 
+      xe=egit1(:,1:38)';
+      yed=egit1(:,39)';
+      xt=test1(:,1:38)';
+      ytd=test1(:,39)';
+    case 2,
+      xe=egit2(:,1:38)';
+      yed=egit2(:,39)';
+      xt=test2(:,1:38)';
+      ytd=test2(:,39)';
+    otherwise,
+      xe=egit3(:,1:38)';
+      yed=egit3(:,39)';
+      xt=test3(:,1:38)';
+      ytd=test3(:,39)';    
+  end
+   
+  t=ind2vec(yed); 
+
+  lvq = newlvq(minmax(xe),60,oran,0.1);
+  lvq.trainParam.epochs=300;
+  lvq.trainParam.show=5;
+  lvq.trainParam.goal=0.07;
+  lvq=train(lvq,xe,t);
+
+  yel1=sim(lvq,xe);
+  yel=vec2ind(yel1);
+  n=0;
+  for i=1:ne(k)
+    if yed(i)==yel(i) 
+      n=n+1;
+    end
+  end
+  dogruluk_egl(k) = 100*(n/ne(k))
+
+  ytl1=sim(lvq,xt);
+  ytl=vec2ind(ytl1);
+  n=0;
+  for i=1:nt(k)
+    if ytd(i)==ytl(i) 
+      n=n+1;
+    end
+  end
+  dogruluk_tsl(k)=100*(n/nt(k))
+
+end
+
+dogruluk_el = mean(dogruluk_egl)
+dogruluk_tl = mean(dogruluk_tsl)
+
+
+**********************************************************
+******** Sadece mlnn**************************************
+**********************************************************
+
+egit1 = importdata('e1.txt');
+egit2 = importdata('e2.txt');
+egit3 = importdata('e3.txt');
+
+test1 = importdata('t1.txt');
+test2 = importdata('t2.txt');
+test3 = importdata('t3.txt');
+
+ne = [96 96 96];
+nt = [48 48 48];
+
+for k=1:3
+  switch k
+    case 1, 
+      xe=egit1(:,1:38)';
+      yed=egit1(:,39)';
+      xt=test1(:,1:38)';
+      ytd=test1(:,39)';
+    case 2,
+      xe=egit2(:,1:38)';
+      yed=egit2(:,39)';
+      xt=test2(:,1:38)';
+      ytd=test2(:,39)';
+    otherwise,
+      xe=egit3(:,1:38)';
+      yed=egit3(:,39)';
+      xt=test3(:,1:38)';
+      ytd=test3(:,39)';    
+  end
+   
+  t=ind2vec(yed); 
+
+  mlnn1 = newff(minmax(xe),[40 1],{'tansig' 'tansig'},'traingdx');
+  mlnn1.trainParam.epochs=300;
+  mlnn1.trainParam.show=10;
+  mlnn1.trainParam.min_grad=0;
+  mlnn1.trainParam.goal=1e-6;
+  yedm=yed/4;
+  mlnn1=train(mlnn1,xe,yedm);
+  yem1=sim(mlnn1,xe);
+  yem1=round(yem1*4);
+  n=0;
+  for i=1:ne(k)
+    if yed(i)==yem1(i) 
+      n=n+1;
+    end
+  end
+  dogruluk_egm1(k) = 100*(n/ne(k))
+
+  ytm1=sim(mlnn1,xt);
+  ytm1=round(ytm1*4);
+  n=0;
+  for i=1:nt(k)
+    if ytd(i)==ytm1(i) 
+      n=n+1;
+    end
+  end
+  dogruluk_tsm1(k)=100*(n/nt(k))
+
+end
+
+dogruluk_em1 = mean(dogruluk_egm1)
+dogruluk_tm1 = mean(dogruluk_tsm1)
+
+**********************************************************
+******** Sadece mlnn2 ************************************
+**********************************************************
+
+egit1 = importdata('e1.txt');
+egit2 = importdata('e2.txt');
+egit3 = importdata('e3.txt');
+
+test1 = importdata('t1.txt');
+test2 = importdata('t2.txt');
+test3 = importdata('t3.txt');
+
+ne = [96 96 96];
+nt = [48 48 48];
+
+for k=1:3
+  switch k
+    case 1, 
+      xe=egit1(:,1:38)';
+      yed=egit1(:,39)';
+      xt=test1(:,1:38)';
+      ytd=test1(:,39)';
+    case 2,
+      xe=egit2(:,1:38)';
+      yed=egit2(:,39)';
+      xt=test2(:,1:38)';
+      ytd=test2(:,39)';
+    otherwise,
+      xe=egit3(:,1:38)';
+      yed=egit3(:,39)';
+      xt=test3(:,1:38)';
+      ytd=test3(:,39)';    
+  end
+   
+  t=ind2vec(yed); 
+
+  mlnn2 = newff(minmax(xe),[50 50 1],{'tansig' 'tansig' 'tansig'},'traingdx');
+  mlnn2.trainParam.epochs=200;
+  mlnn2.trainParam.show=5;
+  mlnn2.trainParam.min_grad=0;
+  mlnn2.trainParam.goal=5e-6;
+  yedm=yed/4;
+  mlnn2=train(mlnn2,xe,yedm);
+  yem2=sim(mlnn2,xe);
+  yem2=round(yem2*4);
+  n=0;
+  for i=1:ne(k)
+   if yed(i)==yem2(i) 
+     n=n+1;
+   end
+  end
+  dogruluk_egm2(k) = 100*(n/ne(k))
+
+  ytm2=sim(mlnn2,xt);
+  ytm2=round(ytm2*4);
+  n=0;
+  for i=1:nt(k)
+    if ytd(i)==ytm2(i) 
+      n=n+1;
+    end
+   end
+   
+  dogruluk_tsm2(k)=100*(n/nt(k))
+
+
+end
+
+
+dogruluk_em2 = mean(dogruluk_egm2)
+dogruluk_tm2 = mean(dogruluk_tsm2)
